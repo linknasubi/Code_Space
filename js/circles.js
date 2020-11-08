@@ -5,8 +5,10 @@ var circle_nodes = []; //Circle objects storage
 var line_nodes = []; //Line objects storage
 var mouse_click = [{x:0, y:0}]; //Mouse click array positions.
 var canv_sec = []; //Sections over the width and heigth.
-
-
+var question_flag = 0
+var lock_array = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0] //Stores player's level
+var Planet = new Image();
+var Planet_BW = new Image();
 
 
 // setup config variables and start the program
@@ -20,26 +22,25 @@ function init() {
 	ctx = canvCircle.getContext('2d')
 	ctx.globalCompositeOperation = 'destination-over';
 
+	Planet.src = 'images/planets.png';
+	Planet_BW.src = 'images/planets_bw.png';
 
-	
-
-	
 }
+
+
 
 init();
 
 
 
 
-function distance_click(xo, x, yo, y, radius){
+function distance_click(xo, x, yo, y, radius, i, lock_value){
 	dist = Math.sqrt(((x-xo) ** 2) + ((y - yo) ** 2))
 
-	if (dist <= radius*1.1){
+	if (dist <= radius*1.1 && lock_value == 1){
 
-		for(i=0; i<circle_nodes.length; i++){
-			circle_nodes[i].lock_flag = 0;
-		}
-		console.log(dist);
+		question_flag = i; //Used in game.js
+
 
 		$("#circleContainer canvas, #circleCanvas").css('z-index', '0');
 		$("#backgroundContainer canvas, #backgroundCanvas").css('z-index', '1');
@@ -48,6 +49,10 @@ function distance_click(xo, x, yo, y, radius){
 
 
 		$("#circleContainer").fadeTo("slow", 0.15);
+
+		
+		draw_Question();
+		lockManager();
 		
 	}
 
@@ -78,7 +83,7 @@ canvCircle.addEventListener('click', (e) => {
 	};
 
 	for(var i = 0; i < circle_nodes.length; i++){
-		distance_click(pos.x, circle_nodes[i].x, pos.y, circle_nodes[i].y, circle_nodes[i].radius);
+		distance_click(pos.x, circle_nodes[i].x, pos.y, circle_nodes[i].y, circle_nodes[i].radius, i, lock_array[i]);
 	}
 	
 });
@@ -91,7 +96,7 @@ canvCircle.addEventListener('mousemove', (e) => {
 	
 	
 	for(var i = 0; i < circle_nodes.length; i++){
-		distance_move(move_pos.x, circle_nodes[i].x, move_pos.y, circle_nodes[i].y, circle_nodes[i].radius, i, circle_nodes[i].lock_flag);
+		distance_move(move_pos.x, circle_nodes[i].x, move_pos.y, circle_nodes[i].y, circle_nodes[i].radius, i, lock_array[i]);
 	};
 	
   });
@@ -123,7 +128,7 @@ Line.prototype.update = function(i){
 
 }
 
-function Circle(xPos, yPos){
+function Circle(xPos, yPos, lock_value){
 
 	var sign = 0
 	var sign_aux = Math.round(Math.random()*2);
@@ -140,18 +145,19 @@ function Circle(xPos, yPos){
 	this.x = xPos;
 	this.y = yPos;
 	this.velocity = sign * 0.005;
-	this.radius_o = Math.round(Math.random()*((canvCircle.width/50)-(canvCircle.width/80)) + (canvCircle.width/90));
-	this.radius = this.radius_o;
-	this.range = Math.random()/8
+	this.radius_o = Math.round(Math.random()*((canvCircle.width/65)-(canvCircle.width/75)) + (canvCircle.width/65)); //Dynamic Radius
+	this.radius = this.radius_o; //Radius Pivot
+	this.range = (Math.random()+0.01)/8
 	this.radians = 0
 	this.color = 'gray';
-	this.lock_flag = 1;
+
+	
 	
 	
 }
 
 
-Circle.prototype.update = function(){
+Circle.prototype.update = function(i){
 
 	
 
@@ -175,15 +181,33 @@ Circle.prototype.update = function(){
 	if(this.scale_flag==-1 && this.radius > this.radius_o*1.05){
 		this.radius -= this.radius*0.05;
 	}
-
-	ctx.beginPath();
-	ctx.fillStyle = this.color;
+	
+	ctx.save();
 	this.x += Math.cos(this.radians) * this.range;
 	this.y += Math.sin(this.radians) * this.range;
-	ctx.arc(this.x , this.y , this.radius, 0, 2 * Math.PI, false)
-	ctx.fill();
-	ctx.stroke();
-	ctx.closePath();
+	ctx.translate(this.x, this.y);
+	ctx.rotate(this.x/20);
+	ctx.translate(-this.x, -this.y);
+
+	if(lock_array[i] == 0){
+		ctx.drawImage(Planet_BW,x=this.x-(this.radius), y=this.y-(this.radius), width=this.radius*2, height=this.radius*2);
+	}
+
+	else{
+		ctx.drawImage(Planet,x=this.x-(this.radius), y=this.y-(this.radius), width=this.radius*2, height=this.radius*2);
+	}
+	
+	ctx.restore();
+	
+
+	//ctx.beginPath();
+	//ctx.fillStyle = this.color;
+	//this.x += Math.cos(this.radians) * this.range;
+	//this.y += Math.sin(this.radians) * this.range;
+	//ctx.arc(this.x , this.y , this.radius, 0, 2 * Math.PI, false)
+	//ctx.fill();
+	//ctx.stroke();
+	//ctx.closePath();
 
 	
 	
@@ -194,19 +218,19 @@ Circle.prototype.update = function(){
 
 function draw_circle(){
 
-	number_points = 10
-	var rel_distance_x = [-(canvCircle.width/6.4), -(canvCircle.width/6.4)]
-	var rel_distance_y = [-(canvCircle.width/6.4), -(canvCircle.width/6.4)]
+	number_points = 10;
+	var rel_distance_x = [-(canvCircle.width/7.4), -(canvCircle.width/5.4)] //Used to keep the planets coordinates away from the borders
+	var rel_distance_y = [-(canvCircle.width/7.4), -(canvCircle.width/5.4)] //Used to keep the planets coordinates away from the borders
 
 	for(var i = 0; i < number_points; i++){
 
-		sectionXo = ((canvCircle.width+rel_distance_x[0])*(i+1))/number_points;
-		sectionX = ((canvCircle.width+rel_distance_x[1])*(i+2)/number_points);
+		sectionXo = (((canvCircle.width+rel_distance_x[0])*(i+1))/number_points);
+		sectionX = ((canvCircle.width+rel_distance_x[1])*(i+2)/number_points) + 40;
 		sectionYo = ((canvCircle.height+rel_distance_y[0])*(number_points-i+2)/number_points);
-		sectionY = ((canvCircle.height+rel_distance_y[1])*(number_points-i+1)/number_points);
+		sectionY = ((canvCircle.height+rel_distance_y[1])*(number_points-i+1)/number_points)+40;
 		randomX = Math.round(Math.random()*(sectionX - sectionXo) + sectionXo);
 		randomY = Math.round(Math.random()*(sectionY - sectionYo) + sectionYo);
-		var circle = new Circle(randomX, randomY);
+		var circle = new Circle(randomX, randomY, lock_array[i]);
 		circle_nodes.push(circle);
 	}
 
@@ -226,13 +250,31 @@ draw_circle();
 
 
 
+function lockManager(){
+
+	flag = 0
+
+	for(i=0; i<lock_array.length; i++){
+		if(lock_array[i] == 1){
+			flag = i;
+		}
+		else{
+			break;
+		}
+	}
+
+	lock_array[flag+1] = 1;
+	
+}
+
+
 function draw() {
 
 	ctx.clearRect(0, 0, canvCircle.width, canvCircle.height); // clear canvas
 	
 
 	for(i=0; i<circle_nodes.length; i++){
-		circle_nodes[i].update();
+		circle_nodes[i].update(i);
 
 
 	}

@@ -1,5 +1,5 @@
 let canvBack, ctxBack;
-
+var Return_Image = new Image();
 
 
 
@@ -12,6 +12,7 @@ function init_back() {
 	ctxBack = canvBack.getContext('2d');
     ctxBack.globalCompositeOperation = 'destination-over';
     
+    Return_Image.src = 'images/return.png';
 
     return_x = 50
     return_y = 50
@@ -25,14 +26,17 @@ init_back();
 
 
 function staticElementsDraw(){
-
-    ctxBack.beginPath();
-    ctxBack.arc(return_x, return_y, radius_return, 0, 2 * Math.PI, false)
-    ctxBack.stroke();
-    ctxBack.closePath();
-    ctxBack.fillStyle = 'yellow';
-    ctxBack.fill();
-    console.log(ctxBack);
+    console.log(Return_Image)
+    
+	//ctxBack.save();
+	//ctx.translate(return_x, return_y);
+	//ctx.rotate(this.x/20);
+    //ctx.translate(-this.x, -this.y);
+    Return_Image.onload = function() {
+        ctxBack.drawImage(Return_Image,x=return_x-radius_return, y=return_y-radius_return, width=radius_return*2, height=radius_return*2);
+      };
+	
+	//ctxBack.restore();
 
 }
 
